@@ -1,48 +1,67 @@
-import React, { useEffect, useCallback} from 'react'
+import React, { useState, useEffect, useCallback} from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { fetchList } from './listSlice'
-import { Grid } from '@material-ui/core';
-export function List() {
-  const { data, categories } = useSelector(
-    (state) => state.data
-  );
+import { Grid, withStyles } from '@material-ui/core';
 
-  const headerStyle =  {
-    backgroundColor: '#666',
+import Card from '@material-ui/core/Card';
+import CardActionArea from '@material-ui/core/CardActionArea';
+import CardContent from '@material-ui/core/CardContent';
+import CardMedia from '@material-ui/core/CardMedia';
+import Typography from '@material-ui/core/Typography';
+//import IMG from '../assets/logo.png';
+
+const styles = {
+  card: {
+    maxWidth: 345,
+  },
+  media: {
+    cursor:'auto',
+    height: 140,
+    borderBottom: '1px solid #666',
+
+  },
+  headerStyle :  {
+    border: '1px solid #666',
     padding: '30px',
     textAlign: 'center',
     fontSsize: '35px',
     color: 'white'
-  }
-  
- const navStyle = {
+  },
+  inputField :{
+    width: '50%'
+  },
+ navStyle: {
     float: 'left',
-    width: '30%',
-    height: '300px',
-    background: '#ccc',
-    padding: '20px'
-  }
-  
-  const navulStyle = {
-    listStyleType: 'none',
-    padding: 0
-  }
-  
-  const articleStyle =  {
-    float: 'left',
-    padding: '20px',
-    width: '70%',
-    backgroundColor: '#f1f1f1',
-    height: '300px'
-  }
-  
-  const footerStyle =  {
-    backgroundColor: '#777',
+    width: '20%',
+    height: 'calc(100vh - 108px)',
+    borderRight: '1px solid #666',
     padding: '10px',
-    textAlign: 'center',
-    color: 'white'
-  }
+   
+  },
+  orderList:{
+    listStyle: 'none',
+    cursor: 'pointer'
+  },
+  para:{
+    fontSize: '12px'
+  },
+  articleStyle:  {
+    float: 'left',
+    padding: '10px',
+    width: '75%',
+    backgroundColor: '#f1f1f1',
+    height: 'calc(100vh - 108px)',
+    overflowY: 'scroll'
+  },
+};
 
+function List(props) {
+  const { classes } = props;
+  const { data, categories } = useSelector(
+    (state) => state.data
+  );
+  const [listData, setListData] = useState([]);
+  const [inputValue, setInputValue] = useState('');
   const dispatch = useDispatch()  
 
   const fetchListData = useCallback(
@@ -54,31 +73,93 @@ export function List() {
     [dispatch]
   )
 
+  const handleCategoryFilter = useCallback((category) => {
+    let dataInfo = []; 
+    for(let i = 0; i < data.length; i++){
+      for ( const iterator in data[i]) {
+        if(category === iterator){
+          dataInfo = [...data[i][iterator]]
+        }
+       }
+     }
+     setListData(dataInfo);
+    
+  }, [data]);
+
+  const handleSearchFilter = useCallback((e) => {
+    if(e.key === 'Enter'){
+      let dataInfo = []; 
+      for(let i = 0; i < data.length; i++){
+        for ( const iterator in data[i]) {
+          if(inputValue.toLocaleLowerCase() === iterator.toLocaleLowerCase()){
+            dataInfo = [...data[i][iterator]]
+          }
+          if(inputValue.trim() === ''){
+            dataInfo = [...dataInfo,...data[i][iterator]]
+          }
+         }
+       }
+      setListData(dataInfo);
+    }
+  }, [inputValue, data]);
+
   useEffect(()=>{
     fetchListData()
   }, [fetchListData])
 
+  useEffect(()=>{
+    let dataInfo = []; 
+    for(let i = 0; i < data.length; i++){
+     for ( const iterator in data[i]) {
+        dataInfo = [...dataInfo, ...data[i][iterator]]
+      }
+    }
+    setListData(dataInfo);
+  }, [data])
+
   return (
     <>
-      <header style={headerStyle}>
-        <h2>Cities</h2>
+      <header className={classes.headerStyle}>
+        <input className={classes.inputField} type="text" placeholder='Search' value={inputValue} onInput={e => setInputValue(e.target.value)}  onKeyPress={(e) => handleSearchFilter(e)} />
       </header>
-
       <section>
-        <nav style={navStyle}>
-          <ul>
-            <li><a href="#">London</a></li>
-            <li><a href="#">Paris</a></li>
-            <li><a href="#">Tokyo</a></li>
+        <nav className={classes.navStyle}>
+          <ul className={classes.orderList}>
+            {
+              categories && categories.map((item, index) => (
+                <li key={item} onClick={() => handleCategoryFilter(item)}>{item}</li>
+              ))
+            }
           </ul>
         </nav>
-        
-        <article style={articleStyle}>
-          <h1>London</h1>
-          <p>London is the capital city of England. It is the most populous city in the  United Kingdom, with a metropolitan area of over 13 million inhabitants.</p>
-          <p>Standing on the River Thames, London has been a major settlement for two millennia, its history going back to its founding by the Romans, who named it Londinium.</p>
+        <article className={classes.articleStyle}>
+          <Grid container spacing={1}>
+            {
+            listData && listData.length > 0 ?
+            listData.map((item, index) => (
+            <Grid key={index} item xs={4}>
+            <Grid>
+             <Card  className={classes.card}>
+                <CardActionArea>
+                  <CardMedia
+                    className={classes.media}
+                    image= {item.image}
+                    title={item.text}
+                  />
+                  <CardContent>
+                    <Typography  className={classes.para} component="p">{item.text}</Typography>
+                  </CardContent>
+                </CardActionArea>
+              </Card>
+               </Grid>
+               </Grid>
+             ))
+             :<Typography  className={classes.para} component="p">No Search Found</Typography>
+            }
+          </Grid>
         </article>
       </section>
       </>
   )
 }
+export default withStyles(styles)(List);
