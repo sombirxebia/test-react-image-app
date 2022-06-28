@@ -1,67 +1,35 @@
 import React, { useState, useEffect, useCallback} from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { fetchList } from './listSlice'
-import { Grid, withStyles } from '@material-ui/core';
+import { withStyles, Grid, Typography, Card, CardActionArea, CardContent, CardMedia, Slider, List, ListItem, ListItemText } from '@material-ui/core';
+import styles from './list.style';
+import { createTheme } from '@material-ui/core/styles';
+import { ThemeProvider } from '@material-ui/styles';
 
-import Card from '@material-ui/core/Card';
-import CardActionArea from '@material-ui/core/CardActionArea';
-import CardContent from '@material-ui/core/CardContent';
-import CardMedia from '@material-ui/core/CardMedia';
-import Typography from '@material-ui/core/Typography';
-//import IMG from '../assets/logo.png';
+const muiTheme = createTheme({
+  overrides:{
+    MuiSlider: {
+      thumb:{
+      color: "grey",
+      },
+      track: {
+        color: 'grey'
+      },
+      rail: {
+        color: 'grey'
+      }
+    }
+}
+});
 
-const styles = {
-  card: {
-    maxWidth: 345,
-  },
-  media: {
-    cursor:'auto',
-    height: 140,
-    borderBottom: '1px solid #666',
-
-  },
-  headerStyle :  {
-    border: '1px solid #666',
-    padding: '30px',
-    textAlign: 'center',
-    fontSsize: '35px',
-    color: 'white'
-  },
-  inputField :{
-    width: '50%'
-  },
- navStyle: {
-    float: 'left',
-    width: '20%',
-    height: 'calc(100vh - 108px)',
-    borderRight: '1px solid #666',
-    padding: '10px',
-   
-  },
-  orderList:{
-    listStyle: 'none',
-    cursor: 'pointer'
-  },
-  para:{
-    fontSize: '12px'
-  },
-  articleStyle:  {
-    float: 'left',
-    padding: '10px',
-    width: '75%',
-    backgroundColor: '#f1f1f1',
-    height: 'calc(100vh - 108px)',
-    overflowY: 'scroll'
-  },
-};
-
-function List(props) {
+function Listing(props) {
   const { classes } = props;
   const { data, categories } = useSelector(
     (state) => state.data
   );
   const [listData, setListData] = useState([]);
   const [inputValue, setInputValue] = useState('');
+  const [defaultOpacity, setOpacity] = useState(1);
   const dispatch = useDispatch()  
 
   const fetchListData = useCallback(
@@ -72,6 +40,10 @@ function List(props) {
     },
     [dispatch]
   )
+
+  const handleOpacityChange = (value) => {
+    setOpacity(value)
+  }
 
   const handleCategoryFilter = useCallback((category) => {
     let dataInfo = []; 
@@ -118,21 +90,37 @@ function List(props) {
   }, [data])
 
   return (
-    <>
-      <header className={classes.headerStyle}>
+    <Grid container direction='column'>
+      <Grid className={classes.headerStyle}>
         <input className={classes.inputField} type="text" placeholder='Search' value={inputValue} onInput={e => setInputValue(e.target.value)}  onKeyPress={(e) => handleSearchFilter(e)} />
-      </header>
-      <section>
-        <nav className={classes.navStyle}>
-          <ul className={classes.orderList}>
+      </Grid>
+      <Grid container direction='row'>
+        <Grid item className={classes.navStyle}>
+          <List component="nav" className={classes.root} aria-label="contacts">
             {
               categories && categories.map((item, index) => (
-                <li key={item} onClick={() => handleCategoryFilter(item)}>{item}</li>
+                <ListItem  key={item} button onClick={() => handleCategoryFilter(item)}>
+                  <ListItemText primary={item} />
+                </ListItem>
               ))
             }
-          </ul>
-        </nav>
-        <article className={classes.articleStyle}>
+        </List>
+          <ThemeProvider theme={muiTheme}>
+            <Slider
+              className={classes.slider}
+              orientation="vertical"
+              min={0.1}
+              max={1}
+              step={0.1}
+              valueLabelDisplay="auto"
+              getAriaValueText={handleOpacityChange}
+              defaultValue={1}
+              aria-labelledby="range-slider"
+            />
+          </ThemeProvider>
+          <Typography  className={classes.opacity} component="p">Opacity</Typography>
+        </Grid>
+        <Grid item className={classes.articleStyle}>
           <Grid container spacing={1}>
             {
             listData && listData.length > 0 ?
@@ -145,6 +133,7 @@ function List(props) {
                     className={classes.media}
                     image= {item.image}
                     title={item.text}
+                    style={{opacity:defaultOpacity}}
                   />
                   <CardContent>
                     <Typography  className={classes.para} component="p">{item.text}</Typography>
@@ -157,9 +146,9 @@ function List(props) {
              :<Typography  className={classes.para} component="p">No Search Found</Typography>
             }
           </Grid>
-        </article>
-      </section>
-      </>
+        </Grid>
+      </Grid>
+    </Grid>
   )
 }
-export default withStyles(styles)(List);
+export default withStyles(styles)(Listing);
